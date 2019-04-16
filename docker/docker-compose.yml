@@ -1,0 +1,37 @@
+version: "2.1"
+
+services:
+  grafana:
+    restart: always
+    container_name: grafana
+    image: grafana/grafana:latest
+    ports:
+      - 80:3000
+    user: "root"
+    volumes: 
+      - ./grafana.ini:/etc/grafana/grafana.ini
+      - ./plugins:/var/lib/grafana/plugins
+      - ./logs:/var/log/grafana
+    links: 
+      - mysql
+    depends_on:
+      mysql: # Ensuring that the container will rise only if the database service is healthy
+        condition: service_healthy
+  
+  mysql: 
+    restart: always
+    container_name: mysql
+    image: mysql:5.7
+    volumes: 
+      - ./datadir:/var/lib/mysql
+      - ./mysql:/docker-entrypoint-initdb.d/ ,rw
+    environment:
+      - MYSQL_DATABASE=grafana
+      - MYSQL_USER=grafana
+      - MYSQL_ROOT_PASSWORD=grafana123456
+      - MYSQL_PASSWORD=grafana123456
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 30s
+      retries: 10
